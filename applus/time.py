@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ base on django
 """
 import datetime
@@ -12,27 +13,22 @@ TZ_UTC = django.utils.timezone.utc
 
 class BaseTimeError(Exception):
     """ 时间错误基类 """
-    pass
 
 
 class DateParseError(BaseTimeError):
     """ date 解析错误 """
-    pass
 
 
 class TimeParseError(BaseTimeError):
     """ time 解析错误 """
-    pass
 
 
 class DateTimeParseError(BaseTimeError):
     """ datetime 解析错误 """
-    pass
 
 
 class DurationParseError(BaseTimeError):
     """ timedelta 解析错误 """
-    pass
 
 
 def now():
