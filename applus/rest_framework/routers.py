@@ -67,12 +67,12 @@ class FilterRouter(Router):
             if hasattr(viewset, cls_method)
         ]
         exclude_methods = []
-        if include_actions:
+        if include_actions is not None:
             include_methods = self._get_methods(include_actions)
             for cls_method in known_methods:
                 if cls_method not in include_methods:
                     exclude_methods.append(cls_method)
-        if exclude_actions:
+        if exclude_actions is not None:
             for cls_method in self._get_methods(exclude_actions):
                 if cls_method in known_methods:
                     exclude_methods.append(cls_method)
