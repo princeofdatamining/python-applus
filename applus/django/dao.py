@@ -15,17 +15,14 @@ def get_model(alias):
     return apps.get_model(alias)
 
 
-def get_dao(alias):
-    """ Manager
-    """
-    return get_model(alias).objects
-
-
-def get_spec_dao(alias, dao_class_or_namespace):
+def get_dao(alias, dao_class_or_namespace=None):
     """ Manager
     """
     model = get_model(alias)
-    if isinstance(dao_class, str):
+    if not dao_class_or_namespace:
+        return model.objects
+
+    if isinstance(dao_class_or_namespace, str):
         dao_class = module_loading.import_string(dao_class_or_namespace)
     else:
         dao_class = dao_class_or_namespace
@@ -46,20 +43,28 @@ def get_lazy_model(alias):
     return functional.SimpleLazyObject(partial(get_model, alias))
 
 
-def get_lazy_dao(alias):
-    """ Manager(lazy)
-    """
-    return functional.SimpleLazyObject(partial(get_dao, alias))
-
-
-def get_lazy_spec_dao(alias, dao_class):
+def get_lazy_dao(alias, dao_class_or_namespace=None):
     """ Manager(lazy)
     """
     return functional.SimpleLazyObject(partial(
-        get_spec_dao, alias, dao_class))
+        get_dao, alias, dao_class_or_namespace=dao_class_or_namespace))
 
 
 def get_lazy_queryset(alias):
     """ Queryset(lazy)
     """
     return functional.SimpleLazyObject(partial(get_queryset, alias))
+
+
+def cached_property_dao(alias=None, dao_class_or_namespace=None):
+    """ 类属性(cached_property)，可解决 import 依赖问题
+
+    class XXX:
+
+        token_dao = dao.cached_property_dao("authtoken.token")
+
+    """
+    # pylint: disable=unused-argument
+    def _func(self):
+        return get_lazy_dao(alias, dao_class_or_namespace)
+    return functional.cached_property(_func)
