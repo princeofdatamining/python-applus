@@ -172,6 +172,7 @@ class ThrottledViewSet(viewsets.ViewSet):
 """
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
+from rest_framework.settings import api_settings
 from rest_framework import exceptions
 from rest_framework import views
 from rest_framework.response import Response
@@ -188,28 +189,34 @@ def _convert_exception(exc):
 def _make_response_data(exc):
     # if not isinstance(exc, exceptions.ValidationError):
     #     return _get_full_details(exc.detail, None, True)
-    return _get_full_details(exc.detail, None, True)
+    return _get_full_details([], exc.detail, None, True)
 
 
-def _get_full_details(detail, field, root):
+def _process_field_name(field_name, root, field):
+    if not root:
+        return field
+    if field_name == api_settings.NON_FIELD_ERRORS_KEY:
+        return None
+    return field_name
+
+
+def _get_full_details(results, detail, field, root):
     if isinstance(detail, list):
-        return [
-            _get_full_details(item, field, False)
-            for item in detail
-        ]
-    if isinstance(detail, dict):
-        return [
-            _get_full_details(field_detail,
-                              field_name if root else field,
+        for item in detail:
+            _get_full_details(results, item, field, False)
+    elif isinstance(detail, dict):
+        for field_name, field_detail in detail.items():
+            _get_full_details(results,
+                              field_detail,
+                              _process_field_name(field_name, root, field),
                               False)
-            for field_name, field_detail in detail.items()
-        ]
-    item = {
-        "field": field,
-        "code": detail.code,
-        "message": detail,
-    }
-    return [item] if root else item
+    else:
+        results.append({
+            "field": field,
+            "code": detail.code,
+            "message": detail,
+        })
+    return results
 
 
 # pylint: disable=unused-argument
