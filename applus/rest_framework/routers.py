@@ -2,10 +2,12 @@
 """ 扩展 rest_framework Router 功能
 """
 from inspect import getmembers
+import functools
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import functional
 from rest_framework import routers
 from rest_framework import decorators
+from rest_framework import response
 
 
 class Router(routers.DefaultRouter):
@@ -202,3 +204,91 @@ class VerbRouter(FilterRouter):
         ]
         # 必须把扩展 Route 放置在默认之前(否则，detail/lookup Pattern 会优先使用)
         return verb_routes + defaults
+
+
+class PerformViewSetMixin:
+    """ 扩展 permissions/serializer """
+
+    extra_permission_classes = None
+    extra_serializer_classes = None
+
+    @staticmethod
+    def _get_value_by_action(action, container, default):
+        if not container:
+            return default
+        for key, value in container.items():
+            if isinstance(key, str):
+                if key == action:
+                    return value
+            elif action in key:
+                return value
+        return default
+
+    def get_permissions(self):
+        """ 权限扩展 """
+        results = super(PerformViewSetMixin, self).get_permissions()
+        extra = self._get_value_by_action(
+            self.action,
+            self.extra_permission_classes,
+            ())
+        for permission_class in extra:
+            results.append(permission_class())
+        return results
+
+    def get_serializer_class(self):
+        """ 序列化扩展 """
+        spec = self._get_value_by_action(
+            self.action,
+            self.extra_serializer_classes,
+            None)
+        if spec:
+            return spec
+        return super(PerformViewSetMixin, self).get_serializer_class()
+
+    # pylint: disable=unused-argument,protected-access
+    def perform_extra_action(self, request, *args, **kwargs):
+        """ verb 对应的通用处理 """
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        method_name = 'perform_%s' % self.action
+        method = getattr(self, method_name)
+        method(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return response.Response(serializer.data)
+
+
+class PerformRouter(VerbRouter):
+    """ 自定义 perform 处理
+
+    class UserViewSet(router.perform_mixin, viewsets.ModelViewSet):
+
+        @router.action(['put'], detail=True)
+        @router.perform_decorator()
+        def password(self, *args, **kwargs):
+            # 空内容，通过 perform_extra_action 自动调用 perform_${ACTION}
+            pass
+
+        def perform_password(self, serializer):
+            ...
+
+    """
+
+    perform_mixin = PerformViewSetMixin
+
+    @classmethod
+    def perform_decorator(cls):
+        """ perform_extra_action 装饰器 """
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(self, *args, **kwargs):
+                return self.perform_extra_action(*args, **kwargs)
+            return wrapper
+        return decorator
