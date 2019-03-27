@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-""" 封装 path, re_path
-"""
+""" 封装 path, re_path """
 from django.urls import path, re_path
 
 

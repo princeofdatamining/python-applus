@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-""" 扩展 rest_framework Router 功能
-"""
+""" 扩展 rest_framework Router 功能 """
 from inspect import getmembers
 import functools
 from django.core.exceptions import ImproperlyConfigured

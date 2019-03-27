@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-""" base on django
-"""
+""" base on django """
 import datetime
 import django.utils.timezone
 import django.utils.dateparse

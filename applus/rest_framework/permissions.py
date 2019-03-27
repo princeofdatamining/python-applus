@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-""" 权限
-"""
+""" 权限 """
 from rest_framework import permissions
 
 
