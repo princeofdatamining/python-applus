@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """ django.utils.functional 扩展 """
+import functools
 from django.utils import functional
 
 
@@ -31,3 +32,9 @@ def reset_lazy_object(lazied):
     #### just wait a few seconds!
     # In [8]: n
     # Out[8]: <SimpleLazyObject: datetime.datetime(..., 10, 40, 38, 397132)>
+
+
+def make_lazy_object(func, *args, **kwargs):
+    """ SimpleLazyOjbect 扩展(默认仅接受无参数的函数) """
+    partial_func = functools.partial(func, *args, **kwargs)
+    return functional.SimpleLazyObject(partial_func)
