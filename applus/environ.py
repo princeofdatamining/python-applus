@@ -2,6 +2,7 @@
 """ 环境配置相关功能 """
 import os
 import urllib
+from importlib import import_module
 
 
 def get_envfunc(prefix=""):
@@ -20,11 +21,24 @@ def get_envfunc(prefix=""):
     return wrapper
 
 
-def decode_result(result, method='unquote'):
-    """ 转义处理 """
-    if not result or method is None:
+def decode_result(result, method='urllib.parse.unquote_plus'):
+    """ 转义处理
+
+    参考: https://api.mongodb.com/python/current/api/pymongo/mongo_client.html
+
+        uri = "mongodb://%s:%s@%s" % (
+            quote_plus(user), quote_plus(password), host)
+
+        uri = "mongodb://%s:%s@%s" % (
+            quote_plus(user), quote_plus(password), quote_plus(socket_path))
+    """
+    if not result or not method:
         return result
-    return urllib.parse.unquote(result)
+    if isinstance(method, str):
+        module_path, class_name = method.rsplit('.', 1)
+        module = import_module(module_path)
+        return getattr(module, class_name)(result)
+    return method(result)
 
 
 def parse_uri(uri, **defaults):
@@ -32,7 +46,7 @@ def parse_uri(uri, **defaults):
     result = urllib.parse.urlparse(uri)
     return {
         "scheme": result.scheme,
-        "username": result.username or defaults.get("username"),
+        "username": decode_result(result.username) or defaults.get("username"),
         "password": decode_result(result.password) or defaults.get("password"),
         "netloc": result.netloc,
         "hostname": result.hostname or defaults.get("hostname"),

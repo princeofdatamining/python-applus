@@ -26,6 +26,10 @@ class TestEnviron(unittest.TestCase):
         self.assertEqual(gef("VERSION", 2, int), 3)
         self.assertEqual(gef("DEBUG", False, bool), True)
         #
+        self.assertEqual("x x", environ.decode_result("x%20x", "urllib.parse.unquote"))
+        self.assertEqual("x x", environ.decode_result("x+x", "urllib.parse.unquote_plus"))
+        self.assertEqual("x+x", environ.decode_result("x+x", "urllib.parse.unquote"))
+        #
 
     DEF_DB_CONF = {
         "username": "root",
