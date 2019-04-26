@@ -90,3 +90,16 @@ def assert_results(content, *args, **kwargs):
                 break
         else:
             assert False, "'{}': '{}' Not in results.".format(key, val)
+
+
+def assert_error(content, **kwargs):
+    """ 错误响应断言 """
+    assert isinstance(content, list), "Error response MUST BE list."
+    for i, error in enumerate(content):
+        assert isinstance(error, dict), "[{}] MUST BE dict.".format(i)
+        if all([
+                key not in kwargs or kwargs[key] == error[key]
+                for key in ["code", "message", "field"]
+        ]):
+            return
+    assert False, "No matched error: {}.".format(kwargs)
