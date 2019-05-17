@@ -91,3 +91,28 @@ class TestEnviron(unittest.TestCase):
         ret = environ.merge_uri(parsed, netloc="localhost")
         self.assertEqual(ret, "http://localhost/db_sample?charset=utf8")
         #
+
+    def test_django_databases(self):
+        mysql = "django.db.backends.mysql"
+        sqlite3 = "django.db.backends.sqlite3"
+        filename = "/path/to/db.sqlite3"
+        mysql_opt = dict(sql_mode="")
+        #
+        dbs = {}
+        environ.update_django_dbs(dbs, "")
+        self.assertEqual({}, dbs)
+        #
+        dbs = {}
+        environ.update_django_dbs(dbs, "file://"+filename)
+        self.assertEqual(sqlite3, dbs["default"]["ENGINE"])
+        self.assertEqual(filename, dbs["default"]["NAME"])
+        #
+        dbs = {}
+        environ.update_django_dbs(dbs, "[]file://"+filename)
+        self.assertEqual(filename, dbs["default"]["NAME"])
+        #
+        dbs = dict(default=dict(ENGINE=sqlite3, NAME=filename))
+        environ.update_django_dbs(dbs, "[] [2nd]mysql://localhost/db_sample", **mysql_opt)
+        self.assertEqual(sqlite3, dbs["default"]["ENGINE"])
+        self.assertEqual(mysql, dbs["2nd"]["ENGINE"])
+        #

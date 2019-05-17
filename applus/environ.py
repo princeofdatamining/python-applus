@@ -76,7 +76,14 @@ def update_django_db(databases, alias, uri, **default_db_values):
     if not uri:
         return
     parsed = parse_uri(uri, **default_db_values)
-    databases[alias] = {
+    if parsed["scheme"] == "mysql":
+        databases[alias] = _parse_mysql(parsed, **default_db_values)
+    else:
+        databases[alias] = _parse_sqlite(parsed)
+
+
+def _parse_mysql(parsed, **default_db_values):
+    return {
         'ENGINE': 'django.db.backends.mysql',
         'HOST': parsed['hostname'],
         'PORT': parsed['port'],
@@ -92,3 +99,26 @@ def update_django_db(databases, alias, uri, **default_db_values):
             'sql_mode': default_db_values['sql_mode'],
         },
     }
+
+
+def _parse_sqlite(parsed):
+    return {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': parsed["path"],
+    }
+
+
+def update_django_dbs(databases, conf, **default_db_values):
+    """ django settings DATABASES
+
+    "default_uri [dbx]dbx_uri"
+    """
+    for row in conf.split():
+        if row.startswith('['):
+            alias, _, uri = row[1:].partition(']')
+        else:
+            alias, uri = "", row
+        #
+        if not alias:
+            alias = "default"
+        update_django_db(databases, alias, uri, **default_db_values)
