@@ -36,6 +36,8 @@ class ConfigurableDatabaseRouter:
         except AttributeError:
             pass
         else:
+            if isinstance(conf, str):
+                return self.import_from_string(conf)
             for db, apps in conf.items():
                 if isinstance(apps, (list, tuple)):
                     for app in apps:
@@ -44,11 +46,24 @@ class ConfigurableDatabaseRouter:
                     result[apps] = db
         return result
 
+    @staticmethod
+    def import_from_string(router):
+        """ 文本配置
+
+        dbx=app3,app4 dby=app8,app9
+        """
+        result = {}
+        for rule in router.split():
+            db, _, apps = rule.partition("=")
+            for app in apps.split(","):
+                result[app] = db
+        return result
+
     @cached_property
     def never_migrates(self):
         """ 是否禁止 migrate """
         try:
-            return settings.DATABASE_NVER_MIGRATES
+            return settings.DATABASE_NEVER_MIGRATES
         except AttributeError:
             return ()
 
