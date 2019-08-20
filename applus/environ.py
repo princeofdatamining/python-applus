@@ -108,10 +108,13 @@ def _parse_sqlite(parsed):
     }
 
 
-def update_django_dbs(databases, conf, **default_db_values):
-    """ django settings DATABASES
 
-    "default_uri [dbx]dbx_uri"
+def parse_alias_conf(conf):
+    """ Multi conf
+        - "default"
+        - "[alias]default"
+        - "default [a]v"
+        - "[a]v [b]w"
     """
     for row in conf.split():
         if row.startswith('['):
@@ -121,4 +124,38 @@ def update_django_dbs(databases, conf, **default_db_values):
         #
         if not alias:
             alias = "default"
+        yield alias, uri
+
+
+def update_django_dbs(databases, conf, **default_db_values):
+    """ django settings DATABASES
+
+    "default_uri [dbx]dbx_uri"
+    """
+    for alias, uri in parse_alias_conf(conf):
         update_django_db(databases, alias, uri, **default_db_values)
+
+
+def _update_django_cache(caches, alias, uri):
+    if not uri:
+        return
+    parsed = parse_uri(uri)
+    if parsed["scheme"] == "memcached":
+        caches[alias] = {
+            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            'LOCATION': parsed['netloc'],
+        }
+    if parsed["scheme"] == "locmem":
+        caches[alias] = {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+
+
+def update_django_caches(caches, conf):
+    """ django settings CACHES
+
+    "default_uri [dbx]dbx_uri"
+    """
+    for alias, uri in parse_alias_conf(conf):
+        _update_django_cache(caches, alias, uri)
+    return caches
