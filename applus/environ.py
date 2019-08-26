@@ -145,7 +145,18 @@ def _update_django_cache(caches, alias, uri):
             'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
             'LOCATION': parsed['netloc'],
         }
-    if parsed["scheme"] == "locmem":
+    elif parsed["scheme"] == "redis":
+        loc = parsed["hostname"]
+        if parsed["port"]:
+            loc += ":{}".format(parsed["port"])
+        caches[alias] = {
+            'BACKEND': 'redis_cache.RedisCache',
+            'LOCATION': [loc],
+            'OPTIONS': {
+                'DB': int(parsed['path'].strip('/') or 1),
+            },
+        }
+    elif parsed["scheme"] == "locmem":
         caches[alias] = {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         }
