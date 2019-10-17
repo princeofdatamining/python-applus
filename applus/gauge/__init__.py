@@ -1,5 +1,6 @@
 """ getgauge 扩展 """
 from django.utils.functional import cached_property
+from django.middleware import csrf
 
 
 class AccessDict(dict):
@@ -47,6 +48,12 @@ class User:
         """ tokens """
         return AccessDict()
 
+    # pylint: disable=no-self-use,invalid-name
+    @cached_property
+    def META(self):
+        """ for csrftoken """
+        return {}
+
     def save_cookie(self, resp, *cookie_names):
         """ 记住 cookies """
         for cookie_name in cookie_names:
@@ -73,6 +80,12 @@ class User:
         """ 填充 Authorization Headers """
         headers['Authorization'] = '{} {}'.format(middleware_name, self.tokens[token_name])
         return headers
+
+    def auto_csrf(self, cookies, headers, cookie_name='csrftoken', header_name="X-CSRFToken"):
+        """ 填充 Django CSRF token """
+        csrf.rotate_token(self)
+        token = self.META["CSRF_COOKIE"]
+        cookies[cookie_name] = headers[header_name] = token
 
 
 def assert_results(content, *args, **kwargs):
