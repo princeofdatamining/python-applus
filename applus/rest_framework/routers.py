@@ -2,6 +2,7 @@
 """ 扩展 rest_framework Router 功能 """
 from inspect import getmembers
 import functools
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import functional
 from rest_framework import routers
@@ -36,6 +37,14 @@ class Router(routers.DefaultRouter):
         """ register 辅助装饰器 """
         def decorator(viewset):
             self._register(prefix, viewset, *args, **kwargs)
+            return viewset
+        return decorator
+
+    def register_debug(self, prefix, *args, **kwargs):
+        """ 仅 DEBUG=True 时有效 """
+        def decorator(viewset):
+            if settings.DEBUG:
+                self._register(prefix, viewset, *args, **kwargs)
             return viewset
         return decorator
 
