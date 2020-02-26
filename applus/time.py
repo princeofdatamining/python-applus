@@ -262,6 +262,11 @@ def floor_time(time, unit):
     floor_time(time, 'weekday')    # '2019-10-21T00:00:00' 周一
     floor_time(time, 'isoweekday') # '2019-10-20T00:00:00' 周日
     """
+    ####################
+    # 扩展支持清除微秒 #
+    ####################
+    if unit == 'microsecond':
+        return time.replace(microsecond=0)
     ########################
     # 扩展支持以星期为单位 #
     ########################
