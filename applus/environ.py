@@ -71,6 +71,27 @@ def merge_uri(parsed, **kwargs):
     ))
 
 
+def simplify_netloc(parsed):
+    """ 移除 netloc 中的敏感信息
+
+    Example:
+    {
+        'username': 'USER',
+        'password': 'PASS',
+        'netloc': 'USER:PASS@x.y.com',
+        'hostname': 'x.y.com',
+        'port': None,
+    }
+    ==>
+    'x.y.com'
+    """
+    if not parsed.get("hostname"):
+        return parsed.get("netloc")
+    if not parsed.get("port"):
+        return parsed.get("hostname")
+    return "{}:{}".format(parsed.get("hostname"), parsed.get("port"))
+
+
 def update_django_db(databases, alias, uri, **default_db_values):
     """ django settings DATABASES """
     if not uri:

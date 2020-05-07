@@ -90,6 +90,12 @@ class TestEnviron(unittest.TestCase):
         parsed = environ.parse_uri(url)
         ret = environ.merge_uri(parsed, netloc="localhost")
         self.assertEqual(ret, "http://localhost/db_sample?charset=utf8")
+        # simplify_netloc
+        self.assertEqual(url, environ.merge_uri(parsed))
+        netloc = environ.simplify_netloc(parsed)
+        self.assertEqual(
+            "http://localhost/db_sample?charset=utf8",
+            environ.merge_uri(parsed, netloc=netloc))
         #
 
     def test_django_databases(self):
